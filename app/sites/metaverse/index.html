@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>メタバースの世界へようこそ - 仮想空間の未来</title>
+    
+    <style>
+        /* CSS変数の定義 */
+        :root {
+            --color-primary: #8b5cf6;
+            --color-secondary: #3b82f6;
+            --color-accent: #10b981;
+            --color-background: #0f0f23;
+            --color-surface: #1a1a2e;
+            --color-text: #ffffff;
+            --color-text-secondary: #a0a0a0;
+            --color-border: #2d2d4a;
+            --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+            --radius: 12px;
+            --max-width: 1200px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ヘッダー・ナビゲーション */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .navbar {
+            height: 70px;
+            display: flex;
+            align-items: center;
+        }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .nav-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            width: 40px;
+            height: 40px;
+            position: relative;
+        }
+
+        .nav-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--color-text);
+            margin: 5px 0;
+            transition: 0.3s;
+            position: absolute;
+            left: 8px;
+        }
+
+        .nav-toggle span:nth-child(1) { top: 10px; }
+        .nav-toggle span:nth-child(2) { top: 19px; }
+        .nav-toggle span:nth-child(3) { top: 28px; }
+
+        .nav-toggle.active span:nth-child(1) {
+            transform: rotate(45deg);
+            top: 19px;
+        }
+
+        .nav-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .nav-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg);
+            top: 19px;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--color-text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: var(--color-primary);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transition: width 0.3s;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* メインコンテンツ */
+        main {
+            margin-top: 0;
+        }
+
+        /* ヒーローセクション */
+        .hero {
+            min-height: 100vh;
+            padding-top: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: var(--gradient-hero);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none"/><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.3)"/></svg>');
+            background-size: 100px 100px;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100px, -100px); }
+        }
+
+        .hero-content {
+            position: relative;
+            text-align: center;
+            z-index: 1;
+            max-width: 1000px;
+            width: 100%;
+            padding: 0 20px;
+            margin: 0 auto;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 1s ease-out;
+            transform: scale(0.9);
+            transform-origin: center;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out 0.2s both;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        /* セクション共通スタイル */
+        .section {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            text-align: center;
+            margin-bottom: 3rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* 概要セクション */
+        .about {
+            background: var(--color-surface);
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .about-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .about-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .about-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1.5rem;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .about-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .about-card p {
+            color: var(--color-text-secondary);
+            line-height: 1.8;
+        }
+
+        /* 特徴セクション */
+        .features {
+            background: var(--color-background);
+        }
+
+        .features-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4rem;
+        }
+
+        .feature {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .feature:nth-child(even) {
+            direction: rtl;
+        }
+
+        .feature:nth-child(even) .feature-text {
+            direction: ltr;
+        }
+
+        .feature-image {
+            background: var(--gradient-primary);
+            height: 300px;
+            border-radius: var(--radius);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-image::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+        }
+
+        .feature-text h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-text p {
+            color: var(--color-text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            color: var(--color-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            color: var(--color-accent);
+            font-weight: bold;
+        }
+
+        /* CTAセクション */
+        .cta {
+            background: var(--gradient-primary);
+            text-align: center;
+            padding: 100px 0;
+        }
+
+        .cta h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .cta p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        /* フッター */
+        .footer {
+            background: var(--color-surface);
+            padding: 40px 0;
+            text-align: center;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .footer-links a {
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--color-primary);
+        }
+
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* デスクトップ・モバイル表示切り替え */
+        .desktop-only {
+            display: inline;
+        }
+
+        .mobile-only {
+            display: none;
+        }
+
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            .desktop-only {
+                display: none;
+            }
+
+            .mobile-only {
+                display: inline;
+            }
+
+            .hero-title {
+                transform: scale(0.75);
+            }
+
+            .nav-toggle {
+                display: block;
+                order: 1;
+            }
+
+            .logo {
+                order: 2;
+                text-align: center;
+                flex: 1;
+            }
+
+            .nav-spacer {
+                order: 3;
+                width: 40px;
+            }
+
+            .nav-menu {
+                position: fixed;
+                left: -100%;
+                top: 70px;
+                flex-direction: column;
+                background: var(--color-surface);
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                box-shadow: 0 10px 27px rgba(0, 0, 0, 0.5);
+                padding: 2rem 0;
+                gap: 1rem;
+            }
+
+            .nav-menu.active {
+                left: 0;
+            }
+
+            .nav-overlay {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                opacity: 0;
+                visibility: hidden;
+                transition: 0.3s;
+            }
+
+            .nav-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .feature {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .feature:nth-child(even) {
+                direction: ltr;
+            }
+
+            .footer-content {
+                justify-content: center;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* パーティクル背景 */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: var(--color-background);
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 50%;
+            animation: particle-float 20s infinite linear;
+        }
+
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <header class="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-wrapper">
+                    <!-- モバイル: 左にメニュー -->
+                    <button class="nav-toggle" id="navToggle" aria-label="メニューを開く">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    
+                    <!-- 中央にタイトル -->
+                    <h1 class="logo">Metaverse World</h1>
+                    
+                    <!-- モバイルメニューのオーバーレイ -->
+                    <div class="nav-overlay" id="navOverlay"></div>
+                    
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="#about" class="nav-link">メタバースとは</a></li>
+                        <li><a href="#features" class="nav-link">特徴</a></li>
+                        <li><a href="#future" class="nav-link">未来</a></li>
+                        <li><a href="#contact" class="nav-link">お問い合わせ</a></li>
+                    </ul>
+                    
+                    <!-- 右側のスペーサー（モバイル用） -->
+                    <div class="nav-spacer"></div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- ヒーローセクション -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h2 class="hero-title">
+                        Hello Metaverse
+                    </h2>
+                    <p class="hero-subtitle">
+                        現実と仮想が融合する、新しいデジタル空間の体験
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#about" class="btn btn-primary">詳しく見る</a>
+                        <a href="#features" class="btn btn-secondary">特徴を見る</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- メタバースとは -->
+        <section id="about" class="section about">
+            <div class="container">
+                <h2 class="section-title">メタバースとは</h2>
+                <p style="text-align: center; color: var(--color-text-secondary); max-width: 800px; margin: 0 auto 3rem;">
+                    メタバースは、インターネット上に構築された3次元の仮想空間です。<br>
+                    ユーザーはアバターを通じて、この空間で他者と交流し、様々な活動を行うことができます。
+                </p>
+                
+                <div class="about-grid">
+                    <div class="about-card animate-fade-in">
+                        <div class="about-icon">
+                            <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </div>
+                        <h3>仮想現実空間</h3>
+                        <p>VR/ARテクノロジーを活用した没入型の3D環境で、現実世界のような体験が可能です。</p>
+                    </div>
+                    
+                    <div class="about-card animate-fade-in" style="animation-delay: 0.1s;">
+                        <div class="about-icon">
+                            <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                        </div>
+                        <h3>社会的交流</h3>
+                        <p>世界中の人々とリアルタイムで交流し、新しいコミュニティを形成できます。</p>
+                    </div>
+                    
+                    <div class="about-card animate-fade-in" style="animation-delay: 0.2s;">
+                        <div class="about-icon">
+                            <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
+                                <path d="M12 2l-5.5 9h11z M12 2l5.5 9H6.5z M17.5 11L12 22l-5.5-11z"/>
+                            </svg>
+                        </div>
+                        <h3>経済活動</h3>
+                        <p>仮想通貨やNFTを活用した新しい経済圏で、創造的な活動が価値を生み出します。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 特徴セクション -->
+        <section id="features" class="section features">
+            <div class="container">
+                <h2 class="section-title">メタバースの特徴</h2>
+                
+                <div class="features-content">
+                    <div class="feature animate-fade-in">
+                        <div class="feature-image"></div>
+                        <div class="feature-text">
+                            <h3>永続的な世界</h3>
+                            <p>メタバースは24時間365日稼働し続ける永続的な世界です。ユーザーがログアウトしても、世界は存在し続け、他のユーザーによって活動が継続されます。</p>
+                            <ul class="feature-list">
+                                <li>リアルタイムで進行する世界</li>
+                                <li>ユーザー主導のコンテンツ作成</li>
+                                <li>持続可能なエコシステム</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="feature animate-fade-in">
+                        <div class="feature-image"></div>
+                        <div class="feature-text">
+                            <h3>相互運用性</h3>
+                            <p>異なるプラットフォーム間でアバターやアイテム、通貨などを移動・使用できる相互運用性により、シームレスな体験が実現します。</p>
+                            <ul class="feature-list">
+                                <li>クロスプラットフォーム対応</li>
+                                <li>統一されたデジタルアイデンティティ</li>
+                                <li>資産の自由な移動</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="feature animate-fade-in">
+                        <div class="feature-image"></div>
+                        <div class="feature-text">
+                            <h3>クリエイターエコノミー</h3>
+                            <p>ユーザー自身がコンテンツを作成し、それを販売することで収益を得られる新しい経済モデルが確立されています。</p>
+                            <ul class="feature-list">
+                                <li>独自のコンテンツ作成ツール</li>
+                                <li>NFTによる所有権の証明</li>
+                                <li>分散型マーケットプレイス</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 未来セクション -->
+        <section id="future" class="section about">
+            <div class="container">
+                <h2 class="section-title">メタバースの未来</h2>
+                <p style="text-align: center; color: var(--color-text-secondary); max-width: 800px; margin: 0 auto 3rem;">
+                    メタバースは私たちの生活、仕事、娯楽のあり方を根本的に変える可能性を秘めています。
+                </p>
+                
+                <div class="about-grid">
+                    <div class="about-card">
+                        <div class="about-icon">
+                            <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
+                                <path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/>
+                            </svg>
+                        </div>
+                        <h3>仮想オフィス</h3>
+                        <p>リモートワークの新しい形として、仮想空間でのオフィスが一般的になり、より自然なコミュニケーションが可能に。</p>
+                    </div>
+                    
+                    <div class="about-card">
+                        <div class="about-icon">
+                            <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                            </svg>
+                        </div>
+                        <h3>エンターテインメント</h3>
+                        <p>コンサート、映画、ゲームなど、あらゆるエンターテインメントが没入型の体験として提供されます。</p>
+                    </div>
+                    
+                    <div class="about-card">
+                        <div class="about-icon">
+                            <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
+                                <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
+                            </svg>
+                        </div>
+                        <h3>教育革命</h3>
+                        <p>体験型学習により、より効果的で楽しい教育が実現。世界中の教育機関にアクセス可能に。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTAセクション -->
+        <section class="section cta">
+            <div class="container">
+                <h2>メタバースの世界を体験しよう</h2>
+                <p>新しいデジタル空間での冒険があなたを待っています</p>
+                <a href="#contact" class="btn btn-secondary" style="background: white; color: var(--color-primary);">
+                    今すぐ始める
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <h3 class="logo">Metaverse World</h3>
+                    <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">
+                        &copy; 2025 Metaverse World. All rights reserved.
+                    </p>
+                </div>
+                <ul class="footer-links">
+                    <li><a href="#about">メタバースとは</a></li>
+                    <li><a href="#features">特徴</a></li>
+                    <li><a href="#future">未来</a></li>
+                    <li><a href="#contact">お問い合わせ</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ナビゲーションメニューの開閉
+        const navToggle = document.getElementById('navToggle');
+        const navMenu = document.getElementById('navMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        navToggle.addEventListener('click', () => {
+            navToggle.classList.toggle('active');
+            navMenu.classList.toggle('active');
+            navOverlay.classList.toggle('active');
+        });
+
+        navOverlay.addEventListener('click', () => {
+            navToggle.classList.remove('active');
+            navMenu.classList.remove('active');
+            navOverlay.classList.remove('active');
+        });
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navToggle.classList.remove('active');
+                navMenu.classList.remove('active');
+                navOverlay.classList.remove('active');
+            });
+        });
+
+        // スムーズスクロール
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // パーティクル背景の生成
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles-js');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 20 + 20) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // スクロールアニメーション
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // アニメーション要素の監視
+        document.querySelectorAll('.animate-fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.8s ease-out, transform 0.8s ease-out';
+            observer.observe(el);
+        });
+
+        // ページ読み込み時の処理
+        window.addEventListener('load', () => {
+            createParticles();
+        });
+    </script>
+</body>
+</html>

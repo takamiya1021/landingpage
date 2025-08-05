@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコード生成ツール - Vibe Preview</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- QRCode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QRコード生成ツール</h1>
+            <p class="subtitle">URLを入力して、QRコードを生成します</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <label for="url-input">URL を入力してください</label>
+                <input 
+                    type="url" 
+                    id="url-input" 
+                    placeholder="https://example.com" 
+                    value="https://"
+                    autocomplete="url"
+                >
+                
+                <div class="options">
+                    <div class="option-group">
+                        <label for="size-select">サイズ</label>
+                        <select id="size-select">
+                            <option value="128">小 (128x128)</option>
+                            <option value="256" selected>中 (256x256)</option>
+                            <option value="512">大 (512x512)</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="color-input">前景色</label>
+                        <input type="color" id="color-input" value="#000000">
+                    </div>
+
+                    <div class="option-group">
+                        <label for="bg-color-input">背景色</label>
+                        <input type="color" id="bg-color-input" value="#ffffff">
+                    </div>
+
+                    <div class="option-group">
+                        <label for="error-correction">誤り訂正レベル</label>
+                        <select id="error-correction">
+                            <option value="L">L (7%)</option>
+                            <option value="M" selected>M (15%)</option>
+                            <option value="Q">Q (25%)</option>
+                            <option value="H">H (30%)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="generate-btn" class="primary-btn">QRコードを生成</button>
+            </div>
+
+            <div class="result-section" id="result-section" style="display: none;">
+                <h2>生成されたQRコード</h2>
+                
+                <div class="qrcode-container">
+                    <div id="qrcode"></div>
+                </div>
+
+                <div class="url-display">
+                    <span class="url-label">エンコードされたURL:</span>
+                    <span id="encoded-url"></span>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="download-png-btn" class="secondary-btn">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        PNGとしてダウンロード
+                    </button>
+                    
+                    <button id="copy-url-btn" class="secondary-btn">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
+                        </svg>
+                        URLをコピー
+                    </button>
+
+                    <button id="new-qr-btn" class="secondary-btn">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        新しいQRコードを作成
+                    </button>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <h3>最近生成したQRコード</h3>
+                <div id="history-list" class="history-list">
+                    <p class="empty-message">まだQRコードを生成していません</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="tips">
+                <h3>使い方のヒント</h3>
+                <ul>
+                    <li>URLを入力して「QRコードを生成」ボタンをクリックします</li>
+                    <li>サイズや色をカスタマイズできます</li>
+                    <li>誤り訂正レベルを上げると、QRコードが部分的に汚れても読み取りやすくなります</li>
+                    <li>生成したQRコードはPNG画像としてダウンロードできます</li>
+                    <li>履歴から以前生成したURLを再利用できます</li>
+                </ul>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

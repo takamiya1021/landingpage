@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Vibe Preview - 複数のWebサイトを同時にプレビュー・比較できる効率的な開発ツール">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: data: blob:; frame-src 'self' https: http: data:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <title>Vibe Preview</title>
+    
+    <!--
+    ================================================================
+    コード保守ルール / Code Maintenance Rules
+    ================================================================
+    
+    【全体設計原則】
+    - HTML, CSS, JavaScriptを1つのファイルにまとめて管理
+    - 各セクションは明確にコメントで分離
+    - 依存関係を最小限に抑える
+    
+    【HTML保守ルール】
+    1. セマンティックHTML
+       - 適切なHTML5タグを使用（header, nav, main, section, article, footer）
+       - 意味のあるclass名（BEM命名規則推奨: block__element--modifier）
+       - アクセシビリティ属性（alt, aria-label, role）を適切に設定
+    
+    2. 構造の原則
+       - ネストは最大3階層まで
+       - IDは一意性が必要な場合のみ使用
+       - data属性でJavaScript用の情報を管理
+    
+    3. パフォーマンス
+       - 画像は適切なフォーマットとサイズ
+       - 遅延読み込み（loading="lazy"）の活用
+       - 不要なDOM要素を作らない
+    
+    【CSS保守ルール】
+    1. 設計原則
+       - CSS Custom Properties（変数）で一元管理
+       - モバイルファースト設計
+       - 詳細度を低く保つ（!importantは原則禁止）
+    
+    2. 命名規則
+       - BEM: .block__element--modifier
+       - 状態: .is-active, .has-error
+       - ユーティリティ: .u-hidden, .u-text-center
+    
+    3. 構造化
+       - レイアウト → コンポーネント → ユーティリティの順
+       - メディアクエリは対象の近くに配置
+       - アニメーションは別セクションにまとめる
+    
+    4. パフォーマンス
+       - 不要なセレクタを避ける
+       - will-changeは慎重に使用
+       - CSS GridとFlexboxを適材適所で使用
+    
+    【JavaScript保守ルール】
+    1. 設計原則
+       - ES6+の機能を活用（const/let, アロー関数, 分割代入）
+       - グローバル変数を最小限に
+       - イベントリスナーは適切に削除
+    
+    2. 命名規則
+       - 変数・関数: camelCase
+       - 定数: UPPER_SNAKE_CASE
+       - クラス: PascalCase
+       - プライベート: _prefixUnderscore
+    
+    3. 構造化
+       - 状態管理を明確に（stateオブジェクト）
+       - 関数は単一責任の原則
+       - 早期リターンでネストを浅く
+       - エラーハンドリングを適切に
+    
+    4. パフォーマンス
+       - DOM操作は最小限に
+       - イベントデリゲーションの活用
+       - デバウンス・スロットリングの実装
+       - メモリリークの防止
+    
+    5. セキュリティ
+       - ユーザー入力は必ず検証・サニタイズ
+       - innerHTML使用時はXSS対策
+       - Content Security Policyの遵守
+    
+    【共通ルール】
+    - DRY原則: 同じコードを繰り返さない
+    - KISS原則: シンプルに保つ
+    - コメントは「なぜ」を説明（「何を」ではない）
+    - コメントは日本語で記述
+    - マジックナンバーは定数化
+    - エッジケースを考慮
+    - テスト可能な設計
+    
+    ================================================================
+    -->
+    
+    <style>
+        /* =============================================
+           Design Tokens
+           ============================================= */
+        :root {
+            /* Colors */
+            --color-primary: #00ffcc;
+            --color-secondary: #0099ff;
+            --color-bg: #0a0a0a;
+            --color-surface: #1a1a1a;
+            --color-surface-light: #2a2a2a;
+            --color-surface-lighter: #3a3a3a;
+            --color-text: #e0e0e0;
+            --color-text-muted: #999;
+            --color-border: #333;
+            --color-shadow: rgba(0, 0, 0, 0.5);
+            --color-accent-shadow: rgba(0, 255, 204, 0.3);
+            
+            /* Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            
+            /* Layout */
+            --sidebar-width: 250px;
+            --header-height: 60px;
+            
+            /* Animation */
+            --transition: 0.3s ease;
+            
+            /* Device Dimensions */
+            --phone-aspect: 9 / 16;
+            --desktop-aspect: 4 / 3;
+            
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+        }
+
+        /* =============================================
+           Reset
+           ============================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* =============================================
+           Layout Components
+           ============================================= */
+        .layout {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .layout__sidebar {
+            width: var(--sidebar-width);
+            background: var(--color-surface);
+            border-right: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            transition: transform var(--transition);
+        }
+
+        .layout__main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--color-bg);
+        }
+
+        /* =============================================
+           Sidebar Components
+           ============================================= */
+        .sidebar__header {
+            padding: var(--space-xl) var(--space-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .sidebar__title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sidebar__nav {
+            flex: 1;
+            padding: var(--space-md) 0;
+            overflow-y: auto;
+        }
+
+        /* =============================================
+           Toggle Components
+           ============================================= */
+        .toggle {
+            display: flex;
+            background: var(--color-surface-light);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            gap: 4px;
+            margin-top: var(--space-md);
+        }
+
+        .toggle__btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+        }
+
+        .toggle__btn:hover {
+            background: var(--color-border);
+            color: var(--color-text);
+        }
+
+        .toggle__btn--active {
+            background: var(--color-primary);
+            color: var(--color-bg);
+            font-weight: 500;
+        }
+
+        .toggle__icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* =============================================
+           Navigation Components
+           ============================================= */
+        .nav__btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: calc(100% - 2rem);
+            margin: var(--space-xs) var(--space-md);
+            padding: 0.75rem var(--space-md);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-md);
+            color: var(--color-text);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 0.95rem;
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .nav__btn:hover {
+            background: var(--color-surface-light);
+            color: var(--color-primary);
+            transform: translateX(5px);
+        }
+
+        .nav__btn--active {
+            background: var(--color-surface-light);
+            color: var(--color-primary);
+            border-left: 3px solid var(--color-primary);
+            padding-left: calc(var(--space-md) - 3px);
+        }
+
+        .nav__icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+
+        .nav__btn:hover .nav__icon,
+        .nav__btn--active .nav__icon {
+            opacity: 1;
+        }
+
+        /* =============================================
+           Button Components
+           ============================================= */
+        .btn {
+            padding: 0.75rem var(--space-lg);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn--primary {
+            background: var(--color-primary);
+            color: var(--color-bg);
+        }
+
+        .btn--primary:hover {
+            background: #00e6b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--color-accent-shadow);
+        }
+
+        .btn--secondary {
+            background: var(--color-surface-light);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn--secondary:hover {
+            background: var(--color-surface-lighter);
+            border-color: var(--color-text-muted);
+        }
+
+        .btn--icon {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            justify-content: center;
+        }
+        
+        .btn__icon {
+            width: 1.2em;
+            height: 1.2em;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        /* Preview Action Button */
+        .preview__actions .btn--icon {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            transition: all 0.2s ease;
+        }
+        
+        .preview__actions .btn--icon svg {
+            width: 60%;
+            height: 60%;
+            color: #999;
+        }
+        
+        .preview__actions .btn--icon:hover {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .preview__actions .btn--icon:hover svg {
+            color: #fff;
+        }
+        
+        .preview__actions .btn--icon:disabled {
+            background: var(--color-surface-light);
+            border-color: var(--color-border);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .preview__actions .btn--icon:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* =============================================
+           Grid Layout
+           ============================================= */
+        .grid {
+            display: flex;
+            gap: var(--space-xl);
+            padding: var(--space-xl);
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 100vh;
+            align-items: center;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            background: var(--color-bg);
+        }
+
+        .grid::-webkit-scrollbar {
+            height: 12px;
+        }
+
+        .grid::-webkit-scrollbar-track {
+            background: var(--color-surface);
+            border-radius: 6px;
+        }
+
+        .grid::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 6px;
+            transition: background var(--transition);
+        }
+
+        .grid::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+
+        /* =============================================
+           Preview Components
+           ============================================= */
+        .preview {
+            flex-shrink: 0;
+            max-height: calc(100vh - var(--space-xl) * 2);
+            animation: fadeIn 0.1s ease-out forwards;
+            will-change: opacity;
+            contain: layout style paint;
+            background: var(--color-bg);
+        }
+
+        .preview--mobile {
+            min-width: 500px;
+        }
+
+        .preview--both {
+            display: inline-block;
+            width: auto;
+        }
+
+        .preview__card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all var(--transition);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px var(--color-shadow);
+            will-change: transform, box-shadow;
+            backface-visibility: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .preview:hover .preview__card {
+            box-shadow: 0 20px 40px var(--color-accent-shadow);
+            border-color: var(--color-primary);
+        }
+
+        .preview__header {
+            padding: var(--space-md) var(--space-lg);
+            background: var(--color-surface-light);
+            border-bottom: 1px solid var(--color-border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview__title {
+            font-size: 1.1rem;
+            color: var(--color-primary);
+            font-weight: 500;
+        }
+
+        .preview__actions {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: center;
+        }
+        
+        /* Mini toggle for preview cards */
+        .preview__toggle {
+            display: flex;
+            background: var(--color-surface);
+            border-radius: var(--radius-sm);
+            padding: 2px;
+            gap: 2px;
+            margin-right: var(--space-sm);
+        }
+        
+        .preview__toggle-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .preview__toggle-btn:hover {
+            background: var(--color-border);
+            color: var(--color-text);
+        }
+        
+        .preview__toggle-btn--active {
+            background: var(--color-primary);
+            color: var(--color-bg);
+            font-weight: 500;
+        }
+        
+        .preview__toggle-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .preview__content {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-bg);
+            contain: layout style paint;
+        }
+
+        .preview__content--mobile {
+            height: calc(100% - var(--header-height));
+            padding: var(--space-lg);
+        }
+
+        .preview__content--desktop {
+            padding: var(--space-xl);
+        }
+
+        .preview__content--both {
+            height: calc(100% - var(--header-height));
+            padding: var(--space-md);
+            overflow: hidden;
+        }
+
+        .preview__devices {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: auto;
+        }
+
+        /* =============================================
+           Device Components
+           ============================================= */
+        .device {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px;
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+
+        .device--mobile {
+            height: 100%;
+            width: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .device--desktop {
+            width: auto;
+            height: auto;
+        }
+
+        /* Phone Device */
+        .phone {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--color-surface-light);
+            border-radius: 24px;
+            padding: 5px;
+            box-shadow: 
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 10px 30px rgba(0, 0, 0, 0.2),
+                0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .phone__safe-area-top {
+            flex-shrink: 0;
+            width: 280px;
+            height: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .phone__notch {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 50%;
+            background: var(--color-surface);
+            border-radius: 20px;
+        }
+
+        .phone__status {
+            position: absolute;
+            top: 45%;
+            left: 8%;
+            right: 8%;
+            height: 40%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .phone__screen {
+            width: 280px;
+            aspect-ratio: 9 / 16;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            contain: layout style paint;
+        }
+
+        .phone__viewport {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        .phone__viewport-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .phone__safe-area-bottom {
+            flex-shrink: 0;
+            width: 280px;
+            height: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .phone__home {
+            position: absolute;
+            bottom: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 20%;
+            background: #666;
+            border-radius: 2px;
+        }
+
+        /* Browser Device */
+        .browser {
+            background: var(--color-surface-light);
+            border-radius: var(--radius-md);
+            padding: 5px;
+            box-shadow: 
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 10px 30px rgba(0, 0, 0, 0.2),
+                0 2px 10px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            flex-direction: column;
+            width: auto;
+            height: auto;
+        }
+
+        .browser__chrome {
+            height: 32px;
+            width: 640px;  /* Match viewport width */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            gap: 8px;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            border-bottom: 1px solid var(--color-border);
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .browser__dots {
+            position: absolute;
+            left: 12px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .browser__dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--color-surface-lighter);
+        }
+
+        .browser__dot--red { background: #ff5f57; }
+        .browser__dot--yellow { background: #ffbd2e; }
+        .browser__dot--green { background: #28ca42; }
+
+        .browser__url {
+            width: 75%;
+            max-width: 600px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+            padding: 4px 12px;
+            color: var(--color-text-muted);
+            font-size: 0.75rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .browser__viewport {
+            background: #1a1a1a;
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+            overflow: hidden;
+            position: relative;
+            will-change: transform;
+            contain: layout style paint;
+            width: 640px;  /* 1440px * 0.44444 */
+            height: 480px; /* 1080px * 0.44444 */
+        }
+        
+        .browser__viewport-content {
+            width: 1440px;
+            height: 1080px; /* 1440px * 3/4 */
+            transform: scale(0.44444); /* 640px / 1440px */
+            transform-origin: top left;
+            position: relative;
+        }
+
+        /* Frame Container */
+        .frame-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #1a1a1a;
+        }
+        
+        /* Common Frame Styles */
+        .frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #1a1a1a;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.05s ease-out;
+            will-change: opacity;
+        }
+        
+        .frame--loaded {
+            opacity: 1;
+        }
+
+        /* Phone viewport iframe specific styles */
+        .phone__viewport-content {
+            width: 380px;
+            height: 675.56px; /* 380px * 16/9 */
+            transform: scale(0.73684); /* 280px / 380px */
+            transform-origin: top left;
+        }
+        
+        .phone__viewport-content .frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Loading & Error States */
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--color-text-muted);
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .message--loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .message__icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            margin-bottom: var(--space-sm);
+            opacity: 0.5;
+        }
+
+        .message__text {
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        /* =============================================
+           Modal Components
+           ============================================= */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal--active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal__content {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px var(--color-shadow);
+        }
+
+        .modal__header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal__title {
+            font-size: 1.25rem;
+            color: var(--color-primary);
+        }
+
+        .modal__body {
+            flex: 1;
+            padding: var(--space-lg);
+            overflow-y: auto;
+        }
+
+        .modal__footer {
+            padding: var(--space-lg);
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-md);
+        }
+
+        /* =============================================
+           Mobile Styles
+           ============================================= */
+        .mobile-header {
+            display: none;
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            padding: var(--space-md);
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 150;
+        }
+
+        .mobile-overlay--active {
+            display: block;
+        }
+
+        /* =============================================
+           Animations
+           ============================================= */
+        @keyframes fadeIn {
+            from { 
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Staggered animations - ultra-thin delays */
+        .preview:nth-child(1) { animation-delay: 0.01s; }
+        .preview:nth-child(2) { animation-delay: 0.02s; }
+        .preview:nth-child(3) { animation-delay: 0.03s; }
+        .preview:nth-child(4) { animation-delay: 0.04s; }
+        .preview:nth-child(5) { animation-delay: 0.05s; }
+
+        /* =============================================
+           Responsive Design
+           ============================================= */
+        @media (max-width: 768px) {
+            .layout__sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                z-index: 200;
+                transform: translateX(-100%);
+            }
+
+            .layout__sidebar--open {
+                transform: translateX(0);
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            .grid {
+                gap: var(--space-lg);
+                padding: var(--space-md);
+            }
+
+            .preview--mobile {
+                min-width: auto;
+            }
+
+            .preview__devices {
+                flex-direction: column;
+            }
+
+            .device--desktop {
+                width: 440px;
+                height: 352px;
+            }
+
+            .browser__viewport {
+                transform: scale(0.43);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="layout__sidebar" id="sidebar">
+            <div class="sidebar__header">
+                <h1 class="sidebar__title">Vibe Preview</h1>
+                
+                <!-- Device Toggle -->
+                <div class="toggle">
+                    <button class="toggle__btn toggle__btn--active" data-device="mobile">
+                        <svg class="toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="7" y="2" width="10" height="20" rx="2" ry="2"/>
+                            <path d="M12 18h.01"/>
+                        </svg>
+                    </button>
+                    <button class="toggle__btn" data-device="desktop">
+                        <svg class="toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </button>
+                    <button class="toggle__btn" data-device="both">
+                        <svg class="toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="4" width="12" height="16" rx="1" ry="1"/>
+                            <path d="M8 18h.01"/>
+                            <rect x="16" y="6" width="6" height="12" rx="1" ry="1"/>
+                            <path d="M19 16h.01"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar__nav" id="nav">
+                <button class="nav__btn nav__btn--active" data-view="all">
+                    <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>All Sites</span>
+                </button>
+                <!-- Dynamic nav items will be inserted here -->
+            </nav>
+            
+            <!-- Settings Button -->
+            <button class="btn btn--secondary" id="settingsBtn" style="margin: var(--space-md); width: calc(100% - 2rem); display: flex; align-items: center; justify-content: flex-start;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 20px; height: 20px; margin-right: 8px;">
+                    <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                </svg>
+                <span>設定ガイド</span>
+            </button>
+        </aside>
+
+        <!-- Mobile Overlay -->
+        <div class="mobile-overlay" id="overlay"></div>
+
+        <!-- Main Content -->
+        <main class="layout__main">
+            <!-- Mobile Header -->
+            <header class="mobile-header">
+                <button class="btn btn--icon" id="menuToggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"/>
+                    </svg>
+                </button>
+                <h2 class="mobile-header__title" id="pageTitle">All Sites</h2>
+            </header>
+
+            <!-- Sites Grid -->
+            <div class="grid" id="grid">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal__content">
+            <div class="modal__header">
+                <h2 class="modal__title">設定ガイド</h2>
+                <button class="btn btn--icon" id="closeModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal__body">
+                <div style="background: var(--color-surface-light); padding: var(--space-lg); border-radius: var(--radius-md); margin-bottom: var(--space-lg);">
+                    <h3 style="color: var(--color-primary); margin-bottom: var(--space-md);">設定概要</h3>
+                    <p style="margin-bottom: var(--space-md);">Vibe Previewは、複数のWebアプリケーションを同時にプレビューできるツールです。list.jsファイルで管理されるアプリケーション設定を通じて、ローカル開発環境と本番環境の切り替えが可能です。</p>
+                    
+                    <h4 style="color: var(--color-text); margin-top: var(--space-lg); margin-bottom: var(--space-sm);">主な機能</h4>
+                    <ul style="list-style: disc; margin-left: var(--space-lg); margin-bottom: var(--space-md);">
+                        <li>複数アプリの同時プレビュー</li>
+                        <li>ローカル/グローバル環境の切り替え（各カード個別）</li>
+                        <li>モバイル/デスクトップビューの切り替え</li>
+                        <li>リアルタイムでのアプリ更新確認</li>
+                    </ul>
+                </div>
+                
+                <div style="background: var(--color-surface-light); padding: var(--space-lg); border-radius: var(--radius-md); margin-bottom: var(--space-lg);">
+                    <h3 style="color: var(--color-primary); margin-bottom: var(--space-md);">list.js の構造</h3>
+                    <pre style="background: var(--color-bg); padding: var(--space-md); border-radius: var(--radius-sm); overflow-x: auto; color: var(--color-text); font-size: 0.875rem;">const productsData = {
+    products: [
+        {
+            id: 'block-away',           // ユニークなID（必須）
+            title: 'Block Away',        // 表示名（必須）
+            url: {
+                local: './games/block-away',     // ローカルパス
+                global: 'https://example.com'    // 本番URL
+            },
+            public: true               // 表示/非表示の制御
+        }
+    ]
+};</pre>
+                </div>
+                
+                <div style="background: var(--color-info-light); padding: var(--space-md); border-radius: var(--radius-sm); margin-bottom: var(--space-md);">
+                    <p style="margin: 0;"><strong>Tips:</strong> localとglobalの両方のURLが設定されている場合、各プレビューカードの右上にLocal/Globalトグルが表示されます。どちらか一方のみの場合は、そのURLが自動的に使用されます。</p>
+                </div>
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn--primary" id="closeModalBtn">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Scripts -->
+    <script src="./list.js" onerror="console.warn('list.js could not be loaded')"></script>
+    
+    <script>
+        // =============================================
+        // Constants
+        // =============================================
+        const ICONS = {
+            home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <polyline points="9 22 9 12 15 12 15 22"/>
+                   </svg>`,
+            globe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                       <circle cx="12" cy="12" r="10"/>
+                       <line x1="2" y1="12" x2="22" y2="12"/>
+                       <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>`,
+            externalLink: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                              <polyline points="15 3 21 3 21 9"/>
+                              <line x1="10" y1="14" x2="21" y2="3"/>
+                           </svg>`,
+            grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="9" y1="3" x2="9" y2="21"/>
+                      <line x1="3" y1="9" x2="21" y2="9"/>
+                   </svg>`
+        };
+
+        // =============================================
+        // State Management
+        // =============================================
+        const state = {
+            device: 'mobile',
+            sites: [],
+            currentView: 'all',
+            siteEnvs: {} // Track environment per site
+        };
+
+        // =============================================
+        // DOM References
+        // =============================================
+        const dom = {
+            sidebar: document.getElementById('sidebar'),
+            overlay: document.getElementById('overlay'),
+            grid: document.getElementById('grid'),
+            nav: document.getElementById('nav'),
+            pageTitle: document.getElementById('pageTitle'),
+            settingsModal: document.getElementById('settingsModal'),
+            menuToggle: document.getElementById('menuToggle'),
+            settingsBtn: document.getElementById('settingsBtn'),
+            closeModal: document.getElementById('closeModal'),
+            closeModalBtn: document.getElementById('closeModalBtn')
+        };
+
+        // =============================================
+        // Initialization
+        // =============================================
+        function init() {
+            // Restore state from URL parameters
+            const params = getQueryParams();
+            state.device = params.device;
+            state.currentView = params.view;
+            
+            // Update UI to reflect restored state
+            updateToggle('device', state.device);
+            
+            loadSites();
+            setupEventListeners();
+            updateNav();
+            scheduleRender();
+        }
+
+        function loadSites() {
+            try {
+                // Load sites from external config (list.js)
+                if (typeof productsData !== 'undefined' && productsData.products) {
+                    state.sites = productsData.products.filter(site => site.public);
+                } else {
+                    state.sites = getDefaultSites();
+                }
+                
+                // Initialize environment for each site based on available URLs
+                state.sites.forEach(site => {
+                    if (!state.siteEnvs[site.id]) {
+                        state.siteEnvs[site.id] = determineDefaultEnvironment(site);
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load sites:', error);
+                state.sites = getDefaultSites();
+            }
+        }
+        
+        function determineDefaultEnvironment(site) {
+            // If only local URL exists, use local
+            if (site.url.local && !site.url.global) return 'local';
+            // If only global URL exists, use global
+            if (!site.url.local && site.url.global) return 'global';
+            // If both exist, default to local
+            return 'local';
+        }
+
+        function getDefaultSites() {
+            return [
+                {
+                    id: 'block-away',
+                    title: 'Block Away',
+                    url: { local: './games/block-away', global: '' },
+                    public: true
+                },
+                {
+                    id: 'color-block',
+                    title: 'Color Block Jam 3D',
+                    url: { local: './games/color-block', global: '' },
+                    public: true
+                }
+            ];
+        }
+
+        // =============================================
+        // Event Listeners
+        // =============================================
+        function setupEventListeners() {
+            // Device toggle
+            document.querySelectorAll('[data-device]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    state.device = e.currentTarget.dataset.device;
+                    updateToggle('device', state.device);
+                    updateURL();
+                    scheduleRender();
+                });
+            });
+
+            // Navigation
+            dom.nav.addEventListener('click', (e) => {
+                const btn = e.target.closest('.nav__btn');
+                if (btn) {
+                    state.currentView = btn.dataset.view;
+                    updateNav();
+                    updateURL();
+                    scheduleRender();
+                    if (window.innerWidth <= 768) closeSidebar();
+                }
+            });
+
+            // Mobile menu
+            dom.menuToggle?.addEventListener('click', toggleSidebar);
+            dom.overlay.addEventListener('click', closeSidebar);
+
+            // Settings modal
+            dom.settingsBtn.addEventListener('click', openModal);
+            dom.closeModal.addEventListener('click', closeModal);
+            dom.closeModalBtn.addEventListener('click', closeModal);
+
+            // Window resize
+            window.addEventListener('resize', handleResize);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
+            });
+            
+            // Environment toggle in preview cards (event delegation)
+            document.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('.preview__toggle-btn');
+                if (toggleBtn) {
+                    const siteId = toggleBtn.dataset.siteId;
+                    const env = toggleBtn.dataset.env;
+                    state.siteEnvs[siteId] = env;
+                    
+                    // Update toggle button states
+                    const toggleContainer = toggleBtn.parentElement;
+                    toggleContainer.querySelectorAll('.preview__toggle-btn').forEach(btn => {
+                        btn.classList.toggle('preview__toggle-btn--active', btn.dataset.env === env);
+                    });
+                    
+                    // Reload only this card's iframe
+                    const site = state.sites.find(s => s.id === siteId);
+                    if (site) {
+                        const preview = toggleBtn.closest('.preview');
+                        reloadPreviewContent(preview, site);
+                    }
+                }
+            });
+        }
+
+        // =============================================
+        // UI Updates
+        // =============================================
+        function updateToggle(type, value) {
+            document.querySelectorAll(`[data-${type}]`).forEach(btn => {
+                btn.classList.toggle('toggle__btn--active', btn.dataset[type] === value);
+            });
+        }
+
+        function updateNav() {
+            dom.nav.querySelectorAll('.nav__btn').forEach(btn => {
+                btn.classList.toggle('nav__btn--active', btn.dataset.view === state.currentView);
+            });
+            
+            const title = state.currentView === 'all' ? 'All Sites' : 
+                         state.sites.find(s => s.id === state.currentView)?.title || 'All Sites';
+            if (dom.pageTitle) dom.pageTitle.textContent = title;
+        }
+
+        // =============================================
+        // Rendering Functions
+        // =============================================
+        function scheduleRender() {
+            requestAnimationFrame(render);
+        }
+        
+        function render() {
+            // Filter sites
+            const sites = state.currentView === 'all' ? 
+                         state.sites : 
+                         state.sites.filter(s => s.id === state.currentView);
+
+            // Ultra-thin approach: replace content directly
+            dom.grid.innerHTML = '';
+            
+            // Render sites immediately
+            sites.forEach((site, index) => {
+                const preview = createPreview(site, index);
+                dom.grid.appendChild(preview);
+            });
+            
+            // Load iframes immediately - no delays
+            loadIframesInContainer(document);
+
+            // Create navigation items if not exists
+            if (dom.nav.children.length === 1) {
+                state.sites.forEach(site => {
+                    const navBtn = createNavButton(site);
+                    dom.nav.appendChild(navBtn);
+                });
+                // Update navigation state after creating buttons
+                updateNav();
+            }
+        }
+
+        function createPreview(site, index) {
+            const preview = document.createElement('div');
+            preview.className = `preview preview--${state.device}`;
+            preview.style.animationDelay = `${index * 0.01}s`;
+
+            const card = document.createElement('div');
+            card.className = 'preview__card';
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'preview__header';
+            
+            // Check if both local and global URLs exist
+            const hasLocal = site.url.local && site.url.local.trim() !== '';
+            const hasGlobal = site.url.global && site.url.global.trim() !== '';
+            const showToggle = hasLocal && hasGlobal;
+            
+            header.innerHTML = `
+                <h3 class="preview__title">${site.title}</h3>
+                <div class="preview__actions">
+                    ${showToggle ? `
+                    <div class="preview__toggle">
+                        <button class="preview__toggle-btn ${state.siteEnvs[site.id] === 'local' ? 'preview__toggle-btn--active' : ''}" 
+                                data-site-id="${site.id}" 
+                                data-env="local">
+                            <div class="preview__toggle-icon">${ICONS.home}</div>
+                            <span>Local</span>
+                        </button>
+                        <button class="preview__toggle-btn ${state.siteEnvs[site.id] === 'global' ? 'preview__toggle-btn--active' : ''}" 
+                                data-site-id="${site.id}" 
+                                data-env="global">
+                            <div class="preview__toggle-icon">${ICONS.globe}</div>
+                            <span>Global</span>
+                        </button>
+                    </div>
+                    ` : ''}
+                    ${createActionButton(site)}
+                </div>
+            `;
+
+            // Content
+            const content = document.createElement('div');
+            content.className = `preview__content preview__content--${state.device}`;
+            content.innerHTML = createDeviceContent(site);
+
+            card.appendChild(header);
+            card.appendChild(content);
+            preview.appendChild(card);
+
+            return preview;
+        }
+
+        function createMobileDevice(site) {
+            const url = getUrl(site);
+            const isEmpty = isEmptyGlobalUrl(site);
+            const content = isEmpty ? createEmptyState() : createIframe(url);
+
+            return `
+                <div class="device device--mobile">
+                    <div class="phone">
+                        <div class="phone__safe-area-top">
+                            <div class="phone__notch"></div>
+                            <div class="phone__status">
+                                <div class="phone__time">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
+                                <div class="phone__icons">
+                                    <svg viewBox="0 0 24 24" style="width: 1.4em; height: 1.4em; fill: #fff;">
+                                        <path d="M2 17h20v2H2zm1.15-4.05L4 11.47l.85 1.48 1.3-.75-.85-1.48H7v-1.5H5.3l.85-1.48L4.85 7 4 8.47 3.15 7l-1.3.75.85 1.48H1v1.5h1.7l-.85 1.48 1.3.75zm6.7-.75l1.48.85 1.48-.85-.85-1.48H14v-1.5h-2.05l.85-1.48-1.48-.85L10 8.47 8.68 7l-1.48.85.85 1.48H6v1.5h2.05l-.85 1.48zm8 0l1.48.85 1.48-.85-.85-1.48H22v-1.5h-2.05l.85-1.48-1.48-.85L18 8.47 16.68 7l-1.48.85.85 1.48H14v1.5h2.05l-.85 1.48z"/>
+                                    </svg>
+                                    <svg viewBox="0 0 24 24" style="width: 1.4em; height: 1.4em; fill: #fff;">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                    <svg viewBox="0 0 24 24" style="width: 1.4em; height: 1.4em; fill: #fff;">
+                                        <path d="M2 17h20v2H2zm1-5h2v3H3zm4 0h2v3H7zm4 0h2v3h-2zm4 0h2v3h-2zm4 0h2v3h-2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="phone__screen">
+                            <div class="phone__viewport">
+                                <div class="phone__viewport-content">
+                                    ${content}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="phone__safe-area-bottom">
+                            <div class="phone__home"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createDesktopDevice(site) {
+            const url = getUrl(site);
+            const isEmpty = isEmptyGlobalUrl(site);
+            const content = isEmpty ? createEmptyState() : createIframe(url);
+            const displayUrl = isEmpty ? 'No URL' : 
+                              url.startsWith('http') ? url : `${window.location.origin}${url}`;
+
+            return `
+                <div class="device device--desktop">
+                    <div class="browser">
+                        <div class="browser__chrome">
+                            <div class="browser__dots">
+                                <div class="browser__dot browser__dot--red"></div>
+                                <div class="browser__dot browser__dot--yellow"></div>
+                                <div class="browser__dot browser__dot--green"></div>
+                            </div>
+                            <div class="browser__url">${displayUrl}</div>
+                        </div>
+                        <div class="browser__viewport">
+                            <div class="browser__viewport-content">
+                                ${content}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createEmptyState() {
+            return `
+                <div class="message">
+                    <div class="message__icon" style="stroke-width: 1.5;">${ICONS.globe}</div>
+                    <div class="message__text">公開サイトが登録されていません</div>
+                </div>
+            `;
+        }
+
+        function createIframe(url) {
+            const fullUrl = getFullUrl(url);
+            const frameId = `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            // Use data: URL with dark background to prevent white flash
+            const darkDataUrl = 'data:text/html;charset=utf-8,<html><head><style>body{margin:0;background:#1a1a1a;}</style></head><body></body></html>';
+            return `
+                <div class="frame-container" data-url="${fullUrl}">
+                    <div class="message message--loading">読み込み中...</div>
+                    <iframe id="${frameId}"
+                            class="frame" 
+                            src="${darkDataUrl}"
+                            sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" 
+                            onerror="handleFrameError(this)">
+                    </iframe>
+                </div>
+            `;
+        }
+        
+        // Iframe handling functions (global for inline event handlers)
+        window.handleFrameLoad = (iframe) => {
+            iframe.classList.add('frame--loaded');
+            const message = iframe.previousElementSibling;
+            if (message) {
+                message.style.display = 'none';
+            }
+        };
+        
+        window.handleFrameError = (iframe) => {
+            iframe.classList.add('frame--loaded');
+            const message = iframe.previousElementSibling;
+            if (message) {
+                message.classList.remove('message--loading');
+                message.textContent = '接続エラー';
+            }
+        };
+
+        function createActionButton(site) {
+            const url = getUrl(site);
+            const isEmpty = isEmptyGlobalUrl(site);
+            
+            if (isEmpty) {
+                return `
+                    <button class="btn btn--icon" disabled>
+                        ${ICONS.externalLink}
+                    </button>
+                `;
+            }
+            
+            const fullUrl = getFullUrl(url);
+            return `
+                <a href="${fullUrl}" target="_blank" class="btn btn--icon">
+                    ${ICONS.externalLink}
+                </a>
+            `;
+        }
+
+        function createNavButton(site) {
+            const btn = document.createElement('button');
+            btn.className = 'nav__btn';
+            btn.dataset.view = site.id;
+            btn.innerHTML = `
+                <div class="nav__icon">${ICONS.grid}</div>
+                <span>${site.title}</span>
+            `;
+            return btn;
+        }
+
+        // =============================================
+        // Utility Functions
+        // =============================================
+        function getUrl(site) {
+            const env = state.siteEnvs[site.id] || 'local';
+            return site.url[env] || '';
+        }
+        
+        function getFullUrl(url) {
+            // For global URLs (https://), use as-is. For local URLs, append /index.html if needed
+            return url.startsWith('http') ? url : 
+                   (url.endsWith('.html') ? url : `${url}/index.html`);
+        }
+        
+        function isEmptyGlobalUrl(site) {
+            const env = state.siteEnvs[site.id] || 'local';
+            const url = getUrl(site);
+            return env === 'global' && !url;
+        }
+        
+        function reloadPreviewContent(preview, site) {
+            const content = preview.querySelector('.preview__content');
+            if (!content) return;
+            
+            // Re-create the device content
+            content.innerHTML = createDeviceContent(site);
+            
+            // Load the new iframes
+            loadIframesInContainer(content);
+            
+            // Update action button
+            const actionButton = preview.querySelector('.preview__actions > .btn--icon, .preview__actions > button[disabled]');
+            if (actionButton) {
+                const newButton = document.createElement('div');
+                newButton.innerHTML = createActionButton(site);
+                actionButton.parentElement.replaceChild(newButton.firstElementChild, actionButton);
+            }
+        }
+        
+        function createDeviceContent(site) {
+            if (state.device === 'both') {
+                return `
+                    <div class="preview__devices">
+                        ${createMobileDevice(site)}
+                        ${createDesktopDevice(site)}
+                    </div>
+                `;
+            } else if (state.device === 'mobile') {
+                return createMobileDevice(site);
+            } else {
+                return createDesktopDevice(site);
+            }
+        }
+        
+        function loadIframesInContainer(container) {
+            container.querySelectorAll('.frame-container').forEach(frameContainer => {
+                const iframe = frameContainer.querySelector('.frame');
+                const url = frameContainer.dataset.url;
+                if (iframe && url && !iframe.dataset.loaded) {
+                    iframe.dataset.loaded = 'true';
+                    iframe.onload = () => window.handleFrameLoad(iframe);
+                    iframe.src = url;
+                }
+            });
+        }
+        
+        // URL parameter functions
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                device: params.get('device') || 'desktop',
+                view: params.get('view') || 'all'
+            };
+        }
+        
+        function updateURL() {
+            const params = new URLSearchParams();
+            params.set('device', state.device);
+            params.set('view', state.currentView);
+            
+            const newURL = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({}, '', newURL);
+        }
+
+        // UI Toggle Functions
+        function setElementState(element, className, isActive) {
+            element.classList[isActive ? 'add' : 'remove'](className);
+        }
+        
+        function toggleSidebar() {
+            const isOpen = dom.sidebar.classList.contains('layout__sidebar--open');
+            setElementState(dom.sidebar, 'layout__sidebar--open', !isOpen);
+            setElementState(dom.overlay, 'mobile-overlay--active', !isOpen);
+        }
+
+        function closeSidebar() {
+            setElementState(dom.sidebar, 'layout__sidebar--open', false);
+            setElementState(dom.overlay, 'mobile-overlay--active', false);
+        }
+
+        function openModal() {
+            setElementState(dom.settingsModal, 'modal--active', true);
+        }
+
+        function closeModal() {
+            setElementState(dom.settingsModal, 'modal--active', false);
+        }
+
+        function handleResize() {
+            if (window.innerWidth > 768) {
+                closeSidebar();
+            }
+        }
+
+        // =============================================
+        // Start Application
+        // =============================================
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
